@@ -1,6 +1,6 @@
 include('shared.lua')
 
-local matNodraw = Material("nodraw")
+local matNodraw = Material("color")
 
 function ENT:Initialize()
 	self:DrawShadow(false)
@@ -11,20 +11,10 @@ function ENT:Initialize()
     net.SendToServer()
 
     self:CreatePhysics()
-    self:SetRenderBounds(self:GetBounds())
 end
 
-function ENT:CreateIMesh()
-    self.IMesh = strut.mesh.CreateIMesh(self.Meshes)
-end
-
-function ENT:GetRenderMesh()
-    local mesh = Mesh()
-    local mat = matNodraw
-
-    if self.IMesh and self.IMesh.Draw then self.IMesh:Draw(matrix) end
-
-    return {Mesh = mesh, Material = mat}
+function ENT:Draw()
+    return
 end
 
 net.Receive("strut_update_mesh", function()
@@ -35,7 +25,5 @@ net.Receive("strut_update_mesh", function()
         ent:AddMesh(strut.mesh.Copy(mesh))
     end
     
-    ent:CreateIMesh()
     ent:CreatePhysics()
-    ent:SetRenderBounds(ent:GetBounds())
 end)
