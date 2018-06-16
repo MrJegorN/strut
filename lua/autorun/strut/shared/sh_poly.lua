@@ -10,6 +10,10 @@ function meta:__tostring()
 	return "Poly["..#self:GetVertices().." vertices]["..tostring(self:GetNormal()).."]"
 end
 
+function methods:IsValid()
+    return #self:GetVertices() >= 3
+end
+
 function Vertex(pos, u, v, normal, tangent)
 	return {
 		pos = pos,

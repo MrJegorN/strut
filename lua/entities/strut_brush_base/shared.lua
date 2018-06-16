@@ -11,8 +11,6 @@ end
 function ENT:ResetMeshes()
     self.PhysicsMesh = {}
     self.Meshes = {}
-
-    if CLIENT then self.IMesh = {} end
 end
 
 function ENT:AddMesh(mesh)
@@ -35,6 +33,8 @@ function ENT:AddMesh(mesh)
 
     table.insert(self.PhysicsMesh, mesh:GetVertices())
     table.insert(self.Meshes, mesh)
+
+    if SERVER then self:CreateRenderers() end
 end
 
 function ENT:GetSurfaceProp() return self.SurfaceProp || "concrete" end

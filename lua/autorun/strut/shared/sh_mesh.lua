@@ -32,10 +32,34 @@ function methods:AddPoly(poly)
     table.insert(self.Polys, poly)
 end
 
+function methods:AddPolyData(polydata)
+	for _, data in pairs(polydata) do
+		if data.MetaName != "Poly" and istable(data) then
+			for _, p in pairs(data) do
+				self:AddPolyData(p)
+			end
+		elseif data.MetaName == "Poly" then self:AddPoly(data) end
+	end
+end
+
 function methods:SetTexture(texture)
 	for _, poly in ipairs(self:GetPolys()) do
 		poly:SetTexture(texture)
 	end
+end
+
+function methods:GetSorted()
+	local sorted = {}
+
+	for _, poly in pairs(self:GetPolys()) do
+		local texture = poly:GetTexture()
+		
+		if !sorted[texture] then sorted[texture] = {} end
+		
+		table.insert(sorted[texture], poly)
+	end
+
+	return sorted
 end
 
 function methods:CalculateBounds(vertpos)
@@ -58,9 +82,9 @@ end
 
 function methods:Calculate()
     local polys = self:GetPolys()
-
+	
 	for k, poly in pairs(polys) do
-		if !poly:IsValid() then
+		if !IsValid(poly) then
 			ErrorNoHalt("Warning: Invalid polygon (" .. k .. ")")
 			table.remove(polys, k)
 		else
@@ -81,6 +105,35 @@ function methods:Calculate()
 	end
 end
 
+function methods:ToIMesh(material)
+	local IMesh = Mesh(material)
+
+	local triangles = {}
+
+	for _, poly in pairs(self:GetPolys()) do
+		local poly_triangles = poly:Triangulate()
+
+		table.Add(triangles, poly_triangles)
+	end
+	
+	mesh.Begin(IMesh, MATERIAL_TRIANGLES, #triangles / 3)
+		for _, vert in pairs(triangles) do
+			mesh.Position(vert.pos)
+
+			mesh.TexCoord(0, vert.u, vert.v) 
+			mesh.TexCoord(1, vert.u*2, vert.v*2)
+
+			mesh.Normal(vert.normal)
+
+			mesh.UserData(vert.userdata[1], vert.userdata[2], vert.userdata[3], vert.userdata[4])
+
+			mesh.AdvanceVertex() 
+		end
+	mesh.End()
+
+	return IMesh
+end
+
 function strut.mesh.Create(...)
     local t = {}
     setmetatable(t, meta)
@@ -89,13 +142,7 @@ function strut.mesh.Create(...)
     t.Polys = {}
     t.Vertices = {}
 
-    for _, data in pairs({...}) do
-		if data.MetaName != "Poly" then
-			for _, p in pairs(data) do
-				t:AddPoly(p)
-			end
-		else t:AddPoly(data) end
-	end
+    t:AddPolyData({...})
 	
 	t:Calculate()
 	return t
@@ -115,51 +162,6 @@ function strut.mesh.Copy(mesh)
     t.Vertices = mesh.Vertices
 
 	return t
-end
-
-function strut.mesh.CreateIMesh(meshes)
-    for _, m in pairs(meshes) do
-        local IMesh = {
-            imeshes = {},
-            Draw = function(self, matrix)
-                for k, v in pairs(self.imeshes) do v:Draw(matrix) end
-            end
-        }
-
-        for _, poly in pairs(m:GetPolys()) do
-            local material = strut.utils.ToVertexLit(Material(poly:GetTexture()))
-            local imesh = Mesh(material)
-            local triangles = poly:Triangulate()
-
-			mesh.Begin(imesh, MATERIAL_TRIANGLES, #triangles / 3)
-			for _, vert in pairs(triangles) do
-				mesh.Position(vert.pos)
-
-				mesh.TexCoord(0, vert.u, vert.v) 
-				mesh.TexCoord(1, vert.u*2, vert.v*2)
-
-				mesh.Normal(vert.normal)
-
-				mesh.UserData(vert.userdata[1], vert.userdata[2], vert.userdata[3], vert.userdata[4])
-
-				mesh.AdvanceVertex() 
-			end
-			mesh.End()
-
-            table.insert(IMesh.imeshes, {
-                imesh = imesh,
-                material = material,
-                Draw = function(self, matrix)
-                    cam.PushModelMatrix(matrix)
-						render.SetMaterial(self.material)
-							self.imesh:Draw()
-                    cam.PopModelMatrix()
-                end
-            })
-        end
-
-        return IMesh
-    end
 end
 
 function strut.mesh.GenerateCubicMesh(min, max, material)
