@@ -18,16 +18,13 @@ function ENT:CreateIMesh()
     self.IMesh = strut.mesh.CreateIMesh(self.Meshes)
 end
 
-function ENT:Draw()
-    render.MaterialOverride(matNodraw)
-        self:DrawModel()
-    render.MaterialOverride()
-    
-    local matrix = Matrix()
-    matrix:SetTranslation(self:GetPos())
-    matrix:SetAngles(self:GetAngles())
-    
+function ENT:GetRenderMesh()
+    local mesh = Mesh()
+    local mat = matNodraw
+
     if self.IMesh and self.IMesh.Draw then self.IMesh:Draw(matrix) end
+
+    return {Mesh = mesh, Material = mat}
 end
 
 net.Receive("strut_update_mesh", function()
