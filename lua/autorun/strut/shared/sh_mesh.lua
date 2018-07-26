@@ -105,8 +105,8 @@ function methods:Calculate()
 	end
 end
 
-function methods:ToIMesh(material)
-	local IMesh = Mesh(material)
+function methods:ToIMesh()
+	local IMesh = Mesh()
 
 	local triangles = {}
 
@@ -116,7 +116,9 @@ function methods:ToIMesh(material)
 		table.Add(triangles, poly_triangles)
 	end
 	
-	mesh.Begin(IMesh, MATERIAL_TRIANGLES, #triangles / 3)
+	IMesh:BuildFromTriangles(triangles)
+
+	--[[mesh.Begin(IMesh, MATERIAL_TRIANGLES, #triangles / 3)
 		for _, vert in pairs(triangles) do
 			mesh.Position(vert.pos)
 
@@ -129,7 +131,7 @@ function methods:ToIMesh(material)
 
 			mesh.AdvanceVertex() 
 		end
-	mesh.End()
+	mesh.End()]]
 
 	return IMesh
 end
@@ -164,7 +166,11 @@ function strut.mesh.Copy(mesh)
 	return t
 end
 
-function strut.mesh.GenerateCubicMesh(min, max, material)
+function strut.mesh.GenerateCubicMesh(min, max, material, color)
+	if material and !isstring(material) then
+		material = material:GetName()
+	end
+
     local bounds = (max - min) * 0.5
 	min = -bounds
 	max = bounds
@@ -173,7 +179,7 @@ function strut.mesh.GenerateCubicMesh(min, max, material)
 	local t = {u[1], u[2], u[3], 1}
 	local n = Vector(0,0,1)
 	local a = strut.poly.Create()
-	a:SetTextureData(material,u,v)
+	a:SetTextureData(material,u,v,color)
 	a:AddVertex(Vector(min.x,max.y,max.z))
 	a:AddVertex(max)
 	a:AddVertex(Vector(max.x,min.y,max.z))
@@ -186,7 +192,7 @@ function strut.mesh.GenerateCubicMesh(min, max, material)
 	t = {u[1], u[2], u[3], 1}
 	n = Vector(0,0,-1)
 	local b = strut.poly.Create()
-	b:SetTextureData(material,u,v)
+	b:SetTextureData(material,u,v,color)
 	b:AddVertex(min)
 	b:AddVertex(Vector(max.x,min.y,min.z))
 	b:AddVertex(Vector(max.x,max.y,min.z))
@@ -199,7 +205,7 @@ function strut.mesh.GenerateCubicMesh(min, max, material)
 	t = {u[1], u[2], u[3], 1}
 	n = Vector(-1,0,0)
 	local c = strut.poly.Create()
-	c:SetTextureData(material,u,v)
+	c:SetTextureData(material,u,v,color)
 	c:AddVertex(Vector(min.x,min.y,max.z))
 	c:AddVertex(min)
 	c:AddVertex(Vector(min.x,max.y,min.z))
@@ -212,7 +218,7 @@ function strut.mesh.GenerateCubicMesh(min, max, material)
 	t = {u[1], u[2], u[3], 1}
 	n = Vector(1,0,0)
 	local d = strut.poly.Create()
-	d:SetTextureData(material,u,v)
+	d:SetTextureData(material,u,v,color)
 	d:AddVertex(max)
 	d:AddVertex(Vector(max.x,max.y,min.z))
 	d:AddVertex(Vector(max.x,min.y,min.z))
@@ -225,7 +231,7 @@ function strut.mesh.GenerateCubicMesh(min, max, material)
 	t = {u[1], u[2], u[3], 1}
 	n = Vector(0,1,0)
 	local e = strut.poly.Create()
-	e:SetTextureData(material,u,v)
+	e:SetTextureData(material,u,v,color)
 	e:AddVertex(Vector(min.x,max.y,max.z))
 	e:AddVertex(Vector(min.x,max.y,min.z))
 	e:AddVertex(Vector(max.x,max.y,min.z))
@@ -238,7 +244,7 @@ function strut.mesh.GenerateCubicMesh(min, max, material)
 	t = {u[1], u[2], u[3], 1}
 	n = Vector(0,-1,0)
 	local f = strut.poly.Create()
-	f:SetTextureData(material,u,v)
+	f:SetTextureData(material,u,v,color)
 	f:AddVertex(Vector(max.x,min.y,max.z))
 	f:AddVertex(Vector(max.x,min.y,min.z))
 	f:AddVertex(min)

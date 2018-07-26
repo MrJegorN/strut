@@ -11,7 +11,7 @@ function ENT:Initialize()
 end
 
 function ENT:CreateIMesh()
-    self.IMesh = self:GetMesh():ToIMesh(self:GetMaterial())
+    self.IMesh = self:GetMesh():ToIMesh(self:GetMeshMaterial())
 end
 
 function ENT:GetIMesh() return self.IMesh end

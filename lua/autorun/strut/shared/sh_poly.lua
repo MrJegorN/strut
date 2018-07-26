@@ -14,13 +14,14 @@ function methods:IsValid()
     return #self:GetVertices() >= 3
 end
 
-function Vertex(pos, u, v, normal, tangent)
+function Vertex(pos, u, v, normal, tangent, color)
 	return {
 		pos = pos,
 		u = u,
 		v = v,
 		normal = normal,
         userdata = tangent,
+        color = color,
 	}
 end
 
@@ -30,7 +31,7 @@ end
 
 function methods:IsValid() return #self:GetVertices() >= 3 end
 
-function methods:SetTextureData(texture, uaxis, vaxis)
+function methods:SetTextureData(texture, uaxis, vaxis, color)
     if istable(texture) then
         self.TextureData = texture
         self:SetTexture(texture.texture)
@@ -47,6 +48,8 @@ function methods:SetTextureData(texture, uaxis, vaxis)
         v_size = vaxis[5],
     }
     self:SetTexture(texture)
+
+    self:SetColor(color or color_white)
 end
 
 function methods:GetTextureData()
@@ -54,6 +57,8 @@ function methods:GetTextureData()
 end
 
 function methods:SetTexture(texture)
+    if !texture then return end
+
     self.TextureData.texture = texture
 
     if SERVER then return end
@@ -71,7 +76,7 @@ end
 
 function methods:CalculateTextureUV()
     local tdata = self:GetTextureData()
-    if !tdata then return end
+    if !tdata or !tdata.texture then return end
 
     for _, vert in pairs(self:GetVertices()) do
         local tu = (vert.pos:DotProduct(tdata.u_normal) / tdata.u_size + tdata.u_offset) / tdata.w
@@ -82,7 +87,7 @@ function methods:CalculateTextureUV()
 end
 
 function methods:AddVertex(pos, u, v, normal, tangent)
-    local vertex = Vertex(pos, u || 0, v || 0, normal || self:GetNormal(), tangent || self:GetTangent())
+    local vertex = Vertex(pos, u || 0, v || 0, normal || self:GetNormal(), tangent || self:GetTangent(), color || self:GetColor())
     table.insert(self.Vertices, vertex)
 
     self:CalculateBounds(pos)
@@ -128,6 +133,14 @@ end
 
 function methods:GetBounds()
     return self.Min || Vector(math.huge, math.huge, math.huge), self.Max || Vector(-math.huge, -math.huge, -math.huge)
+end
+
+function methods:SetColor(color)
+    self.color = color
+end
+
+function methods:GetColor()
+    return self.color || color_white
 end
 
 function methods:SetTangent(tangent)

@@ -74,7 +74,7 @@ function ENT:CreatePhysics()
 
     local phys = self:GetPhysicsObject()
 	if IsValid(phys) then
-		phys:AddGameFlag(bit.bor(FVPHYSICS_CONSTRAINT_STATIC, FVPHYSICS_NO_PLAYER_PICKUP, FVPHYSICS_NO_NPC_IMPACT_DMG, FVPHYSICS_NO_IMPACT_DMG))
+		//phys:AddGameFlag(bit.bor(FVPHYSICS_CONSTRAINT_STATIC, FVPHYSICS_NO_PLAYER_PICKUP, FVPHYSICS_NO_NPC_IMPACT_DMG, FVPHYSICS_NO_IMPACT_DMG))
 		phys:SetMass(5000)
 		phys:EnableMotion(false)
 		phys:SetMaterial(self:GetSurfaceProp())
