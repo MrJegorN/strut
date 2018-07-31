@@ -1,6 +1,8 @@
 strut.utils = strut.utils or {}
 
-function strut.utils.GetMinMaxBounds(vec1, vec2)
+strut.utils.nodraw = Material("nodraw")
+
+function strut.utils.SortBounds(vec1, vec2)
     local vecMin, vecMax = Vector(), Vector()
 
     if vec1 and vec2 then 
@@ -10,6 +12,72 @@ function strut.utils.GetMinMaxBounds(vec1, vec2)
     end
 
     return vecMin, vecMax
+end
+
+function strut.utils.GetWallBounds(mins, maxs, width, height)
+    local dir = (maxs - mins):GetNormalized()
+    local right = dir:Cross(vector_up)
+
+    mins = mins - right * width / 2
+    maxs = maxs + right * width / 2 + vector_up * height
+
+    //mins, maxs = strut.utils.SortBounds(mins, maxs)
+
+    return mins, maxs
+end
+
+function strut.utils.ToVertexLit(material)
+    if SERVER then return material end
+
+	local str = material:GetName()
+	
+	local shader = material:GetShader()
+	if !string.find(shader, "VertexLitGeneric") then
+		local t = material:GetString("$basetexture")
+		if t then
+			local params = {}
+			params["$basetexture"] = t
+
+			material = CreateMaterial(str.."_strut_vlit", "VertexLitGeneric", params)
+		end
+	end
+	return material
+end
+
+function strut.utils.ToUnlit(material)
+    if SERVER then return material end
+
+	local str = material:GetName()
+	
+	local shader = material:GetShader()
+	if !string.find(shader, "UnlitGeneric") then
+		local t = material:GetString("$basetexture")
+		if t then
+			local params = {}
+			params["$basetexture"] = t
+
+			material = CreateMaterial(str.."_strut_unlit", "UnlitGeneric", params)
+		end
+	end
+	return material
+end
+
+function strut.utils.ToLitMapped(material)
+    if SERVER then return material end
+    
+	local str = material:GetName()
+
+	local shader = material:GetShader()
+	if !string.find(shader, "LightmappedGeneric") then
+		local t = material:GetString("$basetexture")
+		if t then
+			local params = {}
+			params["$basetexture"] = t
+
+			material = CreateMaterial(str.."_strut_litmapped", "LightmappedGeneric", params)
+		end
+	end
+	return material
 end
 
 function strut.utils.CreateEffect(...)

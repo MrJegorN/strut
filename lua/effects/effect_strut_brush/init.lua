@@ -11,21 +11,14 @@ function EFFECT:SetVisible(visible) self.m_bVisible = visible end
 function EFFECT:GetVisible() return self.m_bVisible end
 
 local color = Color(194, 205, 198, 100)
-local material = Material("color")
-function EFFECT:SetCube(mins, maxs)
-	local center = (maxs + mins) / 2
-    self:SetPos(center)
+local material = strut.utils.ToUnlit(Material("color"))
 
-	mins, maxs = self:WorldToLocal(mins), self:WorldToLocal(maxs)
-
-	self:SetRenderBounds(mins, maxs)
-
-    local mesh = strut.mesh.GenerateCubicMesh(mins, maxs, material, color)
-    self:SetMesh(mesh)
+function EFFECT:SetBounds(mins, maxs)
+	self:SetRenderBoundsWS(mins, maxs)
 end
 
 function EFFECT:CreateIMesh()
-    self.IMesh = self:GetMesh():ToIMesh()
+    self.IMesh = self:GetMesh():ToIMesh(material, color)
 end
 
 function EFFECT:GetIMesh() return self.IMesh end

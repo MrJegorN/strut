@@ -1,9 +1,8 @@
 include('shared.lua')
 
-local matNodraw = Material("color")
-
 function ENT:Initialize()
 	self:DrawShadow(false)
+
     self:ResetMeshes()
     
     net.Start("strut_request_mesh")
@@ -14,15 +13,24 @@ function ENT:Initialize()
 end
 
 function ENT:Draw()
-    return
+    
 end
 
 net.Receive("strut_update_mesh", function()
+    local reset = net.ReadBool()
     local ent = net.ReadEntity()
     local meshes = net.ReadTable()
+
+    if reset then
+        ent:ResetMeshes()
+    end
     
-    for _, mesh in pairs(meshes) do
-        ent:AddMesh(strut.mesh.Copy(mesh))
+    if !meshes[1] then
+        ent:AddMesh(strut.mesh.Copy(meshes))
+    else
+        for _, mesh in pairs(meshes) do
+            ent:AddMesh(strut.mesh.Copy(mesh))
+        end
     end
     
     ent:CreatePhysics()

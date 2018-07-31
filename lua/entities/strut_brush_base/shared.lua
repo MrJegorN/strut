@@ -13,7 +13,7 @@ function ENT:ResetMeshes()
     self.Meshes = {}
 end
 
-function ENT:AddMesh(mesh)
+function ENT:AddMesh(mesh, network)
     if !self.Meshes then
         self:ResetMeshes()
     end
@@ -34,7 +34,19 @@ function ENT:AddMesh(mesh)
     table.insert(self.PhysicsMesh, mesh:GetVertices())
     table.insert(self.Meshes, mesh)
 
-    if SERVER then self:CreateRenderers() end
+    self:CreatePhysics()
+
+    if SERVER then 
+        self:CreateRenderers() 
+
+        if network then
+            net.Start("strut_update_mesh")
+                net.WriteBool(false)
+                net.WriteEntity(self)
+                net.WriteTable(mesh)
+            net.Broadcast()
+        end
+    end
 end
 
 function ENT:GetSurfaceProp() return self.SurfaceProp || "concrete" end
@@ -68,15 +80,21 @@ function ENT:CreatePhysics()
 	self:EnableCustomCollisions(true)
     
 	self:SetSolid(SOLID_VPHYSICS)
-	self:SetMoveType(MOVETYPE_NONE)
-    
     self:SetCollisionBounds(self:GetBounds())
 
     local phys = self:GetPhysicsObject()
 	if IsValid(phys) then
-		//phys:AddGameFlag(bit.bor(FVPHYSICS_CONSTRAINT_STATIC, FVPHYSICS_NO_PLAYER_PICKUP, FVPHYSICS_NO_NPC_IMPACT_DMG, FVPHYSICS_NO_IMPACT_DMG))
+		phys:AddGameFlag(bit.bor(FVPHYSICS_CONSTRAINT_STATIC, FVPHYSICS_NO_PLAYER_PICKUP, FVPHYSICS_NO_NPC_IMPACT_DMG, FVPHYSICS_NO_IMPACT_DMG))
 		phys:SetMass(5000)
 		phys:EnableMotion(false)
+        timer.Simple(0,function() // Give it a sec. Enabling motion or anything similar right after the physics were created can severaly mess things up.
+			if IsValid(self) and IsValid(phys) then
+				phys:EnableMotion(true)
+				phys:EnableMotion(false) // Need to do this or strange things happen
+			end
+		end)
 		phys:SetMaterial(self:GetSurfaceProp())
 	end
+    
+	self:DrawShadow(false)
 end

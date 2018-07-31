@@ -68,6 +68,7 @@ net.Receive("strut_request_mesh", function(len, ply)
 
     if meshes then
         net.Start("strut_update_mesh")
+            net.WriteBool(true)
             net.WriteEntity(ent)
             net.WriteTable(meshes)
         net.Broadcast()

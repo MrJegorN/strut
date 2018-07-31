@@ -40,12 +40,12 @@ function methods:SetTextureData(texture, uaxis, vaxis, color)
     end
 
     self.TextureData = {
-        u_normal = Vector(uaxis[1], uaxis[2], uaxis[3]),
-        v_normal = Vector(vaxis[1], vaxis[2], vaxis[3]),
-        u_offset = uaxis[4],
-        v_offset = vaxis[4],
-        u_size = uaxis[5],
-        v_size = vaxis[5],
+        u_normal = uaxis[1],
+        v_normal = vaxis[1],
+        u_offset = uaxis[2],
+        v_offset = vaxis[2],
+        u_size = uaxis[3],
+        v_size = vaxis[3],
     }
     self:SetTexture(texture)
 
@@ -87,7 +87,7 @@ function methods:CalculateTextureUV()
 end
 
 function methods:AddVertex(pos, u, v, normal, tangent)
-    local vertex = Vertex(pos, u || 0, v || 0, normal || self:GetNormal(), tangent || self:GetTangent(), color || self:GetColor())
+    local vertex = Vertex(pos, u || 0, v || 0, normal || self:GetNormal(), tangent || {1, 0, 0, 1}, color || self:GetColor())
     table.insert(self.Vertices, vertex)
 
     self:CalculateBounds(pos)
@@ -136,57 +136,51 @@ function methods:GetBounds()
 end
 
 function methods:SetColor(color)
-    self.color = color
+    self.Color = color
 end
 
 function methods:GetColor()
-    return self.color || color_white
-end
-
-function methods:SetTangent(tangent)
-    self.Tangent = tangent
-end
-
-function methods:GetTangent()
-    return self.Tangent || {1, 0, 0, 1}
-end
-
-function methods:ApplyTangent(tangent)
-    for _, vert in pairs(self:GetVertices()) do
-        vert.userdata = tangent
-    end
-
-    self:SetTangent(tangent)
+    return self.Color || color_white
 end
 
 function methods:CalculateTangent() //Eric Leyngel
     if !self.Normal then self:CalculateNormal() end
     
     local verts = self:GetVertices()
+    local vert1, vert2, vert3 = verts[1], verts[2], verts[3]
 
-    local v1, v2, v3 = verts[1].pos, verts[2].pos, verts[#verts].pos
-    local w1, w2, w3 = self:GetUVVector(verts[1]), self:GetUVVector(verts[2]), self:GetUVVector(verts[#verts])
+    local p1, p2, p3 = vert1.pos, vert2.pos, vert3.pos
+    local u1, u2, u3 = vert1.u, vert2.u, vert3.u
+    local v1, v2, v3 = vert1.v, vert2.v, vert3.v
 
-    local vec1, vec2 = v2 - v1, v3 - v1
-    local stv1, stv2 = w2 - w1, w3 - w1
+    local x1 = p2.x - p1.x
+    local x2 = p3.x - p1.x
+    local y1 = p2.y - p1.y
+    local y2 = p3.y - p1.y
+    local z1 = p2.z - p1.z
+    local z2 = p3.z - p1.z
 
-    local r = 1 / (stv1.x * stv2.y - stv2.x * stv1.y)
-    local sdir = (stv2.y * vec1 - stv1.y * vec2) * r
-    local tdir = (stv1.x * vec2 - stv2.x * vec1) * r
+    local s1 = u2 - u1
+    local s2 = u3 - u1
+    local t1 = v2 - v1
+    local t2 = v3 - v1
+
+    local r = 1 / (s1 * t2 - s2 * t1)
+    local sdir = Vector((t2 * x1 - t1 * x2) * r, (t2 * y1 - t1 * y2) * r, (t2 * z1 - t1 * z2) * r)
+    local tdir = Vector((s1 * x2 - s2 * x1) * r, (s1 * y2 - s2 * y1) * r, (s1 * z2 - s2 * z1) * r)
     
-    local normal = self:GetNormal()
+    local tangent = {}
+    for _, vert in pairs(self.Vertices) do
+        local n = vert.normal
+        local t = sdir
 
-    local tangent = (sdir - normal * normal:Dot(sdir)):GetNormal()
-    local handedness = (tdir:Dot(normal:Cross(sdir)) < 0) && -1 || 1
+        local tan = (t - n * n:Dot(t))
+        tan:Normalize()
 
-    local userdata = {
-        tangent.x,
-        tangent.y,
-        tangent.z,
-        handedness,
-    }
+        local w = (n:Cross(t)):Dot(tdir) < 0 and -1 or 1
 
-    self:ApplyTangent(userdata)
+        vert.userdata = {tan[1], tan[2], tan[3], w}
+    end
 end
 
 function methods:SetNormal(normal)
@@ -215,11 +209,13 @@ function methods:CalculateNormal()
     self:ApplyNormal(normal)
 end
 
-function methods:Calculate(force)
-    if !self.Normal or force then self:CalculateNormal() end
-    if !self.Tangent or force then self:CalculateTangent() end
+function methods:Calculate()
+    if !self.Normal then self:CalculateNormal() end
 
-    if CLIENT then self:CalculateTextureUV() end
+    if CLIENT then 
+        self:CalculateTextureUV()
+        self:CalculateTangent()
+    end
 end
 
 function strut.poly.Create()
@@ -240,7 +236,6 @@ function strut.poly.Copy(poly) //Because metatables are not copied with net.Writ
 	t.Min = poly.Min
     t.Max = poly.Max
     t.Normal = poly.Normal
-    t.Tangent = poly.Tangent
 
     t:SetTextureData(poly.TextureData)
 
